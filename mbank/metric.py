@@ -374,6 +374,7 @@ class cbc_metric(object):
 	def log_pdf_gauss(self, theta, boundaries = None):
 		return -0.5*np.sum(np.square(theta-10.), axis =-1) #DEBUG!!!!!
 	
+	
 	def get_WF_grads(self, theta, approx = None, order = None, epsilon = 1e-6, use_cross = False):
 		"""
 		Computes the gradient of the WF with a given lal FD approximant. The gradients are computed with finite difference methods.
@@ -558,23 +559,58 @@ class cbc_metric(object):
 		#warnings.warn("Set non-zero spins!"); s1z = s1z + 0.4; s2z = s2z -0.7
 
 		#TODO: check that phi has an effect here!!
+
+		"""
+		if statement to allow for bns
+		"""
+		lal_dict = lal.CreateDict()
+		if self.var_handler.format_info[self.variable_format]['mass_format']:
+			# theta for mcqlambdatilde is: [Mc, q, lambdatilde]
+			lambdatilde = theta[2]  # lambdatilde is the 3rd parameter
+			
+			lambda1, lambda2 = self.var_handler.lambda_tilde_to_lambda_1_lambda_2(lambdatilde, m1, m2)
+			
+			# Add to LAL dictionary
+			lalsim.SimInspiralWaveformParamsInsertTidalLambda1(lal_dict, lambda1)
+			lalsim.SimInspiralWaveformParamsInsertTidalLambda2(lal_dict, lambda2)
+		
 		try:
-			hptilde, hctilde = lalsim.SimInspiralChooseFDWaveform(m1*lalsim.lal.MSUN_SI,
-                        m2*lalsim.lal.MSUN_SI,
-                        float(s1x), float(s1y), float(s1z),
-                        float(s2x), float(s2y), float(s2z),
-                        1e6*lalsim.lal.PC_SI,
-                        iota, phi, 0., #inclination, phi0, longAscNodes
-                        e, meanano, # eccentricity, meanPerAno
-                        df,
-                        self.f_min, #flow
-                        self.f_max, #fhigh
-                        self.f_min, #fref
-                        lal.CreateDict(),
-                        lal_approx)
+			hptilde, hctilde = lalsim.SimInspiralChooseFDWaveform(
+				m1*lalsim.lal.MSUN_SI,
+				m2*lalsim.lal.MSUN_SI,
+				float(s1x), float(s1y), float(s1z),
+				float(s2x), float(s2y), float(s2z),
+				1e6*lalsim.lal.PC_SI,
+				iota, phi, 0.,
+				e, meanano,
+				df,
+				self.f_min,
+				self.f_max,
+				self.f_min,
+				lal_dict,
+				lal_approx)
 		except RuntimeError:
-			msg = "Failed to call lal waveform with parameters: ({} {} {} {} {} {} {} {} {} {} {} {})".format(m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, iota, phi, e, meanano)
+			msg = "Failed to call lal waveform with parameters: ({} {} {} {} {} {} {} {} {} {} {} {})".format(
+				m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, iota, phi, e, meanano)
 			raise ValueError(msg)
+		# else:
+		
+		# 	hptilde, hctilde = lalsim.SimInspiralChooseFDWaveform(m1*lalsim.lal.MSUN_SI,
+        #                 m2*lalsim.lal.MSUN_SI,
+        #                 float(s1x), float(s1y), float(s1z),
+        #                 float(s2x), float(s2y), float(s2z),
+        #                 1e6*lalsim.lal.PC_SI,
+        #                 iota, phi, 0., #inclination, phi0, longAscNodes
+        #                 e, meanano, # eccentricity, meanPerAno
+        #                 df,
+        #                 self.f_min, #flow
+        #                 self.f_max, #fhigh
+        #                 self.f_min, #fref
+        #                 lal.CreateDict(),
+        #                 lal_approx)
+		# except RuntimeError:
+		# 	msg = "Failed to call lal waveform with parameters: ({} {} {} {} {} {} {} {} {} {} {} {})".format(m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, iota, phi, e, meanano)
+		# 	raise ValueError(msg)
 		#f_grid = np.linspace(0., self.f_max, len(hptilde.data.data))
 		
 		return hptilde, hctilde

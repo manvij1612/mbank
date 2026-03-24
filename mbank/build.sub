@@ -1,0 +1,21 @@
+universe        = vanilla
+executable      = /bin/bash
+arguments       = run_inj.sh
+initialdir      = /home/manvi.jain/NR_banks/mbank/mbank
+output          = logs/bank_tidal.out
+error           = logs/bank_tidal.err
+log             = logs/bank_tidal.log
+
+stream_output   = True
+stream_error    = True
+
+request_cpus    = 8
+request_memory  = 35GB
+request_disk = 10GB
++MaxRuntime     = 500000
+notification    = COMPLETE
+notify_user     = mjain2@umassd.edu
+
+requirements = (OpSys == "LINUX")
+
+queue 
